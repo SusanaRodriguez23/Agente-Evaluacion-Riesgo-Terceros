@@ -1,0 +1,293 @@
+
+/* PALETA SUAVE Y DEGRADADA                                      */
+
+:root {
+  --bg1: #d7e8ff;
+  --bg2: #fff3fb;
+  --bg3: #d9fff4;
+
+  --text-main: #1a1a1a;
+  --text-light: #8a8a8a;
+
+  --panel-light: #ffffff;
+  --panel-dark: #2b2b2b;
+
+  --accent-gradient: linear-gradient(135deg, #74b9ff, #a29bfe, #ffb7e3);
+
+  --msg-user: #b8f2d4;
+  --msg-bot: #eeeeee;
+
+  --dark-bg: #121212;
+  --dark-panel: #1e1e1e;
+  --dark-text: #ececec;
+}
+
+/* GENERALES                                                      */
+
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: var(--panel-light);
+  color: var(--text-main);
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .3s ease, color .3s ease, filter .3s ease;
+}
+
+/* Modo oscuro */
+body.dark-mode {
+  background: var(--dark-bg);
+  color: var(--dark-text);
+}
+
+/* Cuando se abre el chat, difumina el resto */
+body.chat-open {
+  filter: blur(5px);
+}
+
+/* FONDO ANIMADO                                                  */
+
+body::before {
+  content: "";
+  position: fixed;
+  width: 200%;
+  height: 200%;
+  background: var(--accent-gradient);
+  background-size: 200% 200%;
+  animation: moveGradient 18s infinite alternate ease;
+  z-index: -3;
+  transition: opacity .3s ease;
+}
+
+/* Modo oscuro del fondo */
+body.dark-mode::before {
+  opacity: 0.2;
+}
+
+@keyframes moveGradient {
+  0% { transform: translate(0%, 0%); }
+  100% { transform: translate(-20%, -20%); }
+}
+
+/* BURBUJAS ANIMADAS                                             */
+
+.container::before,
+.container::after {
+  content: "";
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255,255,255,0.45), transparent);
+  border-radius: 50%;
+  animation: float 14s infinite ease-in-out alternate;
+  z-index: -2;
+}
+
+.container::after {
+  animation-duration: 20s;
+  top: 60%;
+  left: 20%;
+}
+
+@keyframes float {
+  from { transform: translateY(-80px); }
+  to { transform: translateY(80px); }
+}
+
+
+/* CONTENEDOR Y TARJETA DEL ASISTENTE                           */
+
+.container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ahora la tarjeta tiene fondo claro y texto oscuro */
+.agent-button {
+  background: linear-gradient(135deg, #c4e5d9, #9bacee, #e2bfcf);
+  border-radius: 22px;
+  padding: 32px;
+  width: 450px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-main);
+  border: none;
+  outline: none;
+  box-shadow:
+    0 0 18px rgba(255,255,255,0.5),      /* luz suave por fuera */
+    0 8px 24px rgba(0,0,0,0.15);         /* sombra exterior */
+  transition: transform .25s ease, background .3s ease, color .3s ease;
+}
+
+.agent-button:hover {
+  transform: scale(1.04);
+}
+
+.agent-button img {
+  width: 120px;
+  margin-bottom: 14px;
+}
+
+/* Modo oscuro para tarjeta */
+body.dark-mode .agent-button {
+  background: var(--dark-panel);
+  color: var(--dark-text);
+}
+
+/* BOTÓN MODO OSCURO                                             */
+
+.toggle-theme {
+  position: fixed;
+  top: 28px;
+  right: 40px;
+  background: white;
+  border-radius: 14px;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: bold;
+  z-index: 1000;
+  transition: background .3s ease, color .3s ease;
+}
+
+body.dark-mode .toggle-theme {
+  background: #444;
+  color: white;
+}
+
+/* ESTADO                                                        */
+
+.connection-status {
+  position: fixed;
+  top: 28px;
+  left: 40px;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: color .3s ease;
+}
+
+body.dark-mode .connection-status {
+  color: var(--dark-text);
+}
+
+/* Dot */
+.connection-status .dot {
+  width: 10px;
+  height: 10px;
+  background: #7CF2AE;
+  border-radius: 50%;
+}
+
+/* CHAT                                                          */
+
+#pageContent.blur {
+  filter: blur(5px);
+  transition: filter 0.3s ease;
+}
+.chat-container {
+  position: fixed;
+  width: 420px;
+  height: 520px;
+  left: 50%;
+  top: 50%;
+  filter: none !important;
+  transform: translate(-50%,-50%);
+  border-radius: 20px;
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(24px);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 14px 35px rgba(0,0,0,0.25);
+  animation: fadeUp .35s ease;
+  z-index: 2000;
+}
+
+body.dark-mode .chat-container {
+  background: rgba(77, 76, 76, 0.65);
+  color: black;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate(-50%,-40%); }
+  to { opacity: 1; transform: translate(-50%,-50%); }
+}
+
+.chat-header {
+  background: var(--accent-gradient);
+  padding: 12px 16px;
+  color: white;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-chat {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Mensajes */
+.msg-user {
+  align-self: flex-end;
+  background: var(--msg-user);
+  padding: 10px 16px;
+  border-radius: 18px 18px 0 18px;
+  max-width: 80%;
+}
+
+.msg-bot {
+  align-self: flex-start;
+  background: var(--msg-bot);
+  padding: 10px 16px;
+  border-radius: 18px 18px 18px 0;
+  max-width: 80%;
+}
+
+/* Modo oscuro mensajes */
+body.dark-mode .msg-bot {
+  background: #2b2b2b;
+  color: var(--dark-text);
+}
+
+.chat-input-area {
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+#chatInput {
+  flex: 1;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+#sendChat {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent-gradient);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}

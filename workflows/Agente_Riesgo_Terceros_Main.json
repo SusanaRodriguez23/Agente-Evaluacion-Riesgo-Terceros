@@ -1,0 +1,451 @@
+{
+  "name": "Agente_Riesgo_Terceros_Main",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4a4899e4-99c4-41da-a205-71312b2a3b63",
+              "leftValue": "={{$json.usar_herramienta}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        256
+      ],
+      "id": "249ac3aa-b632-4c54-afaf-cb398ace4b16",
+      "name": "IF"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agente-riesgo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1824,
+        256
+      ],
+      "id": "5ea5e32b-9b78-4ed1-becf-4388a5e61bb2",
+      "name": "Webhook",
+      "webhookId": "0a8196bb-d7ee-46ef-9ba7-1b297cf7bc3f"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Capturar input del usuario desde múltiples posibles fuentes\nconst incoming = $input.first().json;\n\nlet raw =\n  incoming.body?.pregunta ||\n  incoming.pregunta ||\n  incoming.sanitized_input ||\n  incoming.user_input ||\n  incoming.chatInput ||\n  incoming.input ||\n  \"\";\n\n// Si está vacío, devolver cadena vacía\nif (!raw || typeof raw !== \"string\") {\n  raw = \"\";\n}\n\n// == 2. Limitar tamaño máximo ==\nraw = raw.slice(0, 1000);\n\n// == 3. Bloquear bloques de código ==\nraw = raw.replace(/```[\\s\\S]*?```/g, \"[Bloque Código Bloqueado]\");\n\n// == 4. Bloquear comandos peligrosos ==\nconst comandos = [\n  \"system\", \"exec\", \"curl\", \"wget\", \"sudo\", \"rm \", \"del \",\n  \"drop table\", \"select * from\", \"chmod\", \"chown\"\n];\ncomandos.forEach(cmd => {\n  const reg = new RegExp(cmd, \"gi\");\n  raw = raw.replace(reg, \"[Comando Bloqueado]\");\n});\n\n// == 5. Bloquear intentos de prompt injection ==\nconst jailbreaks = [\n  \"ignore previous instructions\",\n  \"act as\",\n  \"bypass guardrails\",\n  \"you are now\",\n  \"forget the above\",\n  \"override system\",\n  \"developer mode\",\n  \"enable hidden mode\"\n];\n\njailbreaks.forEach(term => {\n  const reg = new RegExp(term, \"gi\");\n  raw = raw.replace(reg, \"[Intento de Manipulación Bloqueado]\");\n});\n\n// == 6. Remover etiquetas HTML peligrosas ==\nraw = raw.replace(/<\\/?[^>]+(>|$)/g, \"[HTML Bloqueado]\");\n\n// == 7. NO BORRAR LLAVES JSON {}\n// Solo bloqueamos < >\nraw = raw.replace(/[<>]/g, \"[HTML Bloqueado]\");\n\n// == 8. Normalizar espacios ==\nraw = raw.replace(/\\s+/g, \" \").trim();\n\n// == 9. Construcción del output ==\nreturn [\n  {\n    json: {\n      sanitized_input: raw\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1648,
+        256
+      ],
+      "id": "deb5a542-359b-49e0-8460-fe52fce18a68",
+      "name": "sanitizar_entrada"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        448
+      ],
+      "id": "240d4e2f-d9c9-40ed-a926-39d7f2726c6b",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "aeCL7nnKz9o97s8N",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "memoryKey": {
+          "__rl": true,
+          "value": "Key_certificados",
+          "mode": "list"
+        },
+        "prompt": "={{ $json.sanitized_input }}",
+        "topK": 10,
+        "includeDocumentMetadata": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        -1472,
+        256
+      ],
+      "id": "e733dadc-1f61-42c9-a163-d1d0ffc6aa97",
+      "name": "Simple Vector Store"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =============================================================\n// ANALIZAR RESPUESTA DEL LLM (SALIDA JSON) - VERSIÓN FINAL CORREGIDA\n// Este código maneja la VÍA TRUE (acción) y la VÍA FALSE (RAG/Guardrail).\n// =============================================================\n\n// 1. Detección robusta de la variable de entrada del LLM\nconst rawText = $input.first().json.response || $input.first().json.text || \"\";\nlet responseJson = null;\n\n// Función de utilidad para parseo seguro\nfunction tryParseJSON(text) {\n  try { return JSON.parse(text); }\n  catch (e) { return null; }\n}\n\n\n// ---------------------------------------------------------\n// 1. LIMPIAR TEXTO Y EXTRAER JSON (Robustez)\n// ---------------------------------------------------------\n\ntry {\n  let cleaned = rawText\n    .replace(/```json/gi, \"\")\n    .replace(/```/gi, \"\")\n    .trim();\n\n  // Regex para encontrar el bloque JSON\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n  const jsonText = match ? match[0] : cleaned;\n\n  responseJson = tryParseJSON(jsonText);\n\n} catch {\n  responseJson = null; // Si el regex falla, el JSON es nulo\n}\n\n// Inicialización de variables de salida (Fallback por defecto)\nconst output = { ...$input.first().json };\noutput.usar_herramienta = false;\noutput.action_data = null;\noutput.respuesta_final = \"No tengo información al respecto en mi base de datos.\";\n\n// ---------------------------------------------------------\n// 2. SI NO HAY JSON VÁLIDO → FALLBACK (Guardrail)\n// ---------------------------------------------------------\n\nif (!responseJson || typeof responseJson !== \"object\") {\n  return [{ json: output }];\n}\n\n// ---------------------------------------------------------\n// 3. EXTRAER DATOS DEL JSON DEL MODELO\n// ---------------------------------------------------------\n\nconst action  = responseJson.action ?? null;\nconst answer  = responseJson.answer ?? null;\n// Mapeamos el campo 'params' que el LLM genera\nconst params  = responseJson.params ?? responseJson.parameters ?? {}; \n\n// =============================================================\n// 4. MANEJAR Acción 'consultar_estado_certificacion' (VÍA TRUE)\n// =============================================================\n\nif (action === \"consultar_estado_certificacion\") {\n\n  const proveedor = params?.nombre_proveedor?.toString().trim() || null;\n\n  // ✔ CASO CORRECTO → ACTIVAR TOOL\n  output.usar_herramienta = true;\n  output.action_data = { nombre_proveedor: proveedor };\n  output.respuesta_final = null;\n  return [{ json: output }];\n}\n\n// =============================================================\n// 5. RESPUESTA DIRECTA (RAG) o FALLBACK FINAL (VÍA FALSE)\n// =============================================================\n\nif (action === null && answer) {\n  // Caso RAG o Fallback (Guardrail)\n  output.usar_herramienta = false;\n  output.respuesta_final = answer;\n  return [{ json: output }];\n}\n\n// ---------------------------------------------------------\n// 6. FALLBACK PARA CUALQUIER OTRA CONDICIÓN\n// ---------------------------------------------------------\n\nreturn [{ json: output }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        256
+      ],
+      "id": "0c556eee-aa8d-4cfc-a8c3-e42fe467b437",
+      "name": "analizar_respuesta"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "PCWc7qAr8AQkaiGF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/PCWc7qAr8AQkaiGF",
+          "cachedResultName": "Consultar_Certificacion"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5a5c6a32-ac16-4735-8ddf-2e198a279360",
+      "name": "Call 'Consultar_Certificacion'"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        176,
+        176
+      ],
+      "id": "8700f0de-a55d-4d7f-b9c2-015dfc703abc",
+      "name": "Modelo 2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "aeCL7nnKz9o97s8N",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "837cba5c-24e6-40b1-bc78-e5608d3b2882",
+              "name": "final_response",
+              "value": "={{ $json.respuesta_final }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        272
+      ],
+      "id": "86e274f3-9fae-46d9-8108-a7ba86d265dc",
+      "name": "estandarizar_respuesta"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"respuesta\": \"{{ $json.text }}\"\n}\n\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        560,
+        -32
+      ],
+      "id": "3ae07892-5821-4b63-9b11-5425ce781a4b",
+      "name": "respuesta"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// 1. Leer todos los items del vector search\n// ============================================\nconst items = $input.all();\n\nlet relevantes = items\n  .map(i => {\n    const content = i.json.document?.pageContent || \"\";\n    const score = i.json.score ?? 0;\n    return { content, score };\n  })\n  .filter(d => d.score > 0.25)\n  .sort((a, b) => b.score - a.score);\n\nconst contextoRAG = relevantes.length > 0\n  ? relevantes.map(r => `- ${r.content}`).join(\"\\n\")\n  : \"No hay información relevante en la base de riesgo.\";\n\n// ============================================\n// 2. Obtener la pregunta del usuario\n// ============================================\nconst pregunta = $('sanitizar_entrada').first().json.sanitized_input || \"\";\n\n// ============================================\n// 3. Detectar si la pregunta es certificación\n// ============================================\nconst lower = pregunta.toLowerCase();\n\nconst palabrasCert = [\n  \"iso\", \"soc\", \"pci\", \"certificacion\", \"certificación\",\n  \"auditoria\", \"auditoría\", \"cumplimiento\", \"certificaciones\",\n  \"estado de certificación\", \"está certificado\"\n];\n\nconst esCert = palabrasCert.some(p => lower.includes(p));\n\n// ============================================\n// 4. SI ES CERTIFICACIÓN → NO MANDAR RAG\n// ============================================\nreturn [\n  {\n    json: {\n      sanitized_input: pregunta,\n      contexto_rag: esCert ? \"\" : contextoRAG\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1168,
+        256
+      ],
+      "id": "ca22d7c1-8c5c-4684-9072-77be3876fb61",
+      "name": "construir_prompt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=SISTEMA:\nEres un Agente Evaluador de Riesgo de Proveedores. Tu ÚNICA SALIDA permitida es un JSON válido. Debes actuar estrictamente en el orden de decisión, sin desviaciones.\n\nREGLAS DE FORMATO (Obligatorias):\n1. Devuelve **SOLAMENTE** un objeto JSON.\n2. NO uses markdown, texto, o explicaciones fuera del JSON.\n\n--\n#### 1. 🔴 GUARDRAIL DE EXCLUSIÓN (Anti-Alucinación)\n\n**Criterio:** La PREGUNTA es totalmente irrelevante para el riesgo de proveedores (ej. deportes, cocina, clima) **Y** el CONTEXTO RAG está vacío o no es relevante.\n\n**ACCIÓN (Si el criterio se cumple):**\n* **IGNORA** todas las reglas siguientes.\n    {\n      \"action\": null,\n      \"answer\": \"No tengo información al respecto en mi base de datos.\"\n    }\n\n---\n\n#### 2. 🚨 ACCIÓN DE HERRAMIENTA 🚨\n\n**Criterio de Búsqueda:** La PREGUNTA contiene **literalmente** (case-insensitive) cualquiera de estos términos:\nISO, SOC, PCI, certificación, certificaciones, auditoría, cumplimiento, \"está certificado\", \"estado de certificación\".\n\n**ACCIÓN (Si el criterio se cumple):**\n* **Extracción de Proveedor:** Identifica **SOLO** el nombre de la **entidad, empresa o tercero** sobre la que se pregunta la certificación. Si no hay un nombre específico, usa **null**.\n* **IGNORA** el CONTEXTO RAG y **DEVUELVE INMEDIATAMENTE** el JSON de acción.\n    {\n      \"action\": \"consultar_estado_certificacion\",\n      \"params\": { \"nombre_proveedor\": \"NOMBRE_DEL_PROVEEDOR_O_NULL\" },\n      \"answer\": \"La pregunta requiere verificar el estado de certificación.\"\n    }\n\n---\n\n#### 3. 🔍 RESPUESTA RAG (VÍA FALSE - Último Recurso)\n\n**Criterio:** La PREGUNTA **no activó** la Herramienta (Punto 2).\n\n* **Si el CONTEXTO RAG es útil para responder la PREGUNTA:**\n    * **Responde a la PREGUNTA usando SÓLO la información del CONTEXTO RAG.**\n    {\n      \"action\": null,\n      \"answer\": \"TU_RESPUESTA_BASADA_SOLO_EN_EL_CONTENIDO_DE_RAG\"\n    }\n\n* **En cualquier otro caso (Contexto RAG inútil o vacío):**\n    {\n      \"action\": null,\n      \"answer\": \"No tengo información al respecto en mi base de datos.\"\n    }\n\n---\n\n### DATOS DISPONIBLES\n\nCONTEXTO RAG:\n{{ $json.contexto_rag }}\n\nPREGUNTA:\n{{ $json.sanitized_input }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -1024,
+        256
+      ],
+      "id": "553737d5-d329-4110-bac8-bcaebd04aef0",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        432
+      ],
+      "id": "76cbad80-fe0c-4d92-a11a-2d354a6d3aa9",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "aeCL7nnKz9o97s8N",
+          "name": "Ollama account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=SISTEMA:\nEres un agente técnico de evaluación de riesgo. Tu única tarea es convertir la OBSERVACIÓN de la herramienta en una respuesta final clara para el usuario, sin modificar la información.\n\nREGLAS:\n\nNo cambies el significado de la observación.\n\nNo agregues información nueva.\n\nNo elimines detalles relevantes.\n\nNo agregues saludos, cierres, ni explicaciones.\n\nLa salida debe ser exactamente la reformulación directa de la observación, en una sola oración o párrafo breve.\n\nOBSERVACIÓN:\n{{ $node[\"Call 'Consultar_Certificacion'\"].json.observacion }}\n\nTAREA:\nDevuelve la respuesta final basada únicamente en la observación.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        192,
+        0
+      ],
+      "id": "cc153f1e-497d-4ddd-aa6d-f7a15c7a4a15",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"respuesta\": \"{{ $json.final_response }}\"\n}\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        224,
+        320
+      ],
+      "id": "15fc2a06-b6d6-4b8e-9afc-b86dcc95300e",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "IF": {
+      "main": [
+        [
+          {
+            "node": "Call 'Consultar_Certificacion'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "estandarizar_respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "sanitizar_entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sanitizar_entrada": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store": {
+      "main": [
+        [
+          {
+            "node": "construir_prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "analizar_respuesta": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Consultar_Certificacion'": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo 2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "estandarizar_respuesta": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "construir_prompt": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "analizar_respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "69f596b6-729f-4372-bd01-14391ab87581",
+  "meta": {
+    "instanceId": "2ab2eedd701691bc9deb393150d0f34cdb4a895536b6bb6297c19755623506a6"
+  },
+  "id": "eX6oOXwFqr55PVUo",
+  "tags": []
+}

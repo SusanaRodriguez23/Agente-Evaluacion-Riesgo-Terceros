@@ -1,0 +1,58 @@
+{
+  "name": "Consultar_Certificacion",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtener todo el JSON recibido\nconst datos = $input.item.json;\n\n// 2. Extraer el nombre del proveedor desde donde realmente viene\nconst entrada =\n  datos.action_data?.nombre_proveedor ||  // viene del agente\n  datos.nombre_proveedor ||               // por si algún día llega directo\n  datos.proveedor ||                      // fallback\n  null;\n\nconsole.log('Datos recibidos:', datos);\nconsole.log('Proveedor detectado:', entrada);\n\n// 3. Base de datos simulada AMPLIADA\nconst base = {\n  \"securecloud\": \"El proveedor SecureCloud tiene la certificación ISO 27001 activa y vigente hasta 2026.\",\n  \"dataplus\": \"DataPlus no cuenta con certificación de seguridad vigente (Riesgo Potencial).\",\n  \"technova\": \"TechNova cuenta con SOC 2 Type II válida hasta 2025.\",\n  \"cybertrust\": \"CyberTrust mantiene ISO 27001 y ISO 27017 vigentes hasta 2027.\",\n  \"fortifycloud\": \"FortifyCloud posee SOC 1 Type II y SOC 2 Type II válidas hasta 2026 y auditoría anual documentada.\",\n  \"paysecure\": \"PaySecure está certificado en PCI-DSS 4.0, con cumplimiento validado por auditor externo en 2024.\",\n  \"dataview\": \"DataView contaba con ISO 27001, pero expiró en 2023 sin evidencia de renovación.\",\n  \"neocorp\": \"NeoCorp no posee certificaciones formales pero cuenta con políticas documentadas y controles internos auditables.\",\n  \"infoshield\": \"InfoShield se encuentra en proceso de certificación ISO 27001, con auditoría de precertificación aprobada en 2025.\",\n  \"cloudbox\": \"CloudBox afirma tener SOC 2, pero no proporciona reportes de auditoría ni pruebas de cumplimiento.\",\n  \"globaldata\": \"GlobalData cuenta con ISO 27001 solo para el datacenter principal, pero no para servicios adicionales.\",\n  \"securelane\": \"SecureLane posee certificación ISO 27001 vigente, pero la última auditoría interna reportó hallazgos críticos sin mitigar.\",\n  \"latamcloud\": \"LatamCloud tiene un equivalente regional a ISO 27001 certificado por el organismo normalizador de Chile.\",\n  \"darkstream\": \"DarkStream no permite acceso a informes SOC ni auditorías externas (riesgo elevado).\",\n  \"microserve\": \"MicroServe cuenta con PCI-DSS únicamente para su gateway de pago, pero no para otros sistemas operativos.\"\n};\n\n// 4. Lógica de respuesta\nlet respuesta;\n\nif (!entrada) {\n    respuesta = \"Error: No se recibió el parámetro 'nombre_proveedor'. Revisa el Body en Postman.\";\n} else {\n    const key = entrada.toLowerCase().trim();\n    respuesta = base[key] || `No se encontró información de certificación para el proveedor '${entrada}'.`;\n}\n\n// 5. Retornar la respuesta al workflow principal\nreturn [{\n  json: {\n    observacion: respuesta\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "17765dce-b511-438a-9494-d0723b7f138b",
+      "name": "Consultar_Base_Certificaciones"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4e194c26-44e2-4839-be2b-21055cc61aa2",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Consultar_Base_Certificaciones": {
+      "main": [
+        []
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Consultar_Base_Certificaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "65498589-0000-4ac7-86b5-548ac154b553",
+  "meta": {
+    "instanceId": "2ab2eedd701691bc9deb393150d0f34cdb4a895536b6bb6297c19755623506a6"
+  },
+  "id": "PCWc7qAr8AQkaiGF",
+  "tags": []
+}

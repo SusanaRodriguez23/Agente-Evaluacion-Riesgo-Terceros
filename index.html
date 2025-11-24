@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agente de Evaluación de Riesgo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- MODO OSCURO -->
+  <button id="themeBtn" class="toggle-theme" aria-pressed="false" aria-label="Alternar tema">Modo Oscuro</button>
+
+  <!-- ESTADO -->
+  <div class="connection-status" aria-hidden="false">
+    <span class="dot" aria-hidden="true"></span>
+    <span>Agente de Evaluación de Riesgo de Terceros</span>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL (se desenfoca con .blur) -->
+  <div id="pageContent" class="container" role="main" aria-label="Página principal">
+
+    <!-- BOTÓN CENTRAL / TARJETA -->
+    <button class="agent-button" id="openChat" aria-haspopup="dialog" aria-controls="chatBox" aria-label="Abrir chat con Evaly">
+      <img src="img/Evaly.png" alt="Evaly, asistente evaluador" />
+      <h2>¡Hola! Soy Evaly</h2>
+      <p>Haz clic para comenzar.</p>
+    </button>
+
+  </div>
+
+  <!-- CHAT (modal) -->
+  <div class="chat-container" id="chatBox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Chat del asistente">
+    <div class="chat-header">
+      <span>Evaly</span>
+      <button id="closeChat" class="close-chat" aria-label="Cerrar chat">✖</button>
+    </div>
+
+    <!-- Mensajes: incluimos mensaje de bienvenida estático (se mantiene y serán añadidos los nuevos por JS) -->
+    <div class="chat-messages" id="messages" role="log" aria-live="polite">
+      <div class="msg-bot">👋 ¡Hola! Soy Evaly. Hazme una pregunta cuando quieras.</div>
+    </div>
+
+    <div class="chat-input-area">
+      <label for="chatInput" class="sr-only">Mensaje</label>
+      <input type="text" id="chatInput" placeholder="Escribe tu mensaje..." autocomplete="off" />
+      <button id="sendChat" aria-label="Enviar mensaje">Enviar</button>
+    </div>
+  </div>
+
+  <!-- Pequeño estilo accesible para screen readers (oculto visualmente) -->
+  <style>
+    .sr-only{
+      position:absolute!important;
+      width:1px;height:1px;
+      margin:-1px;padding:0;overflow:hidden;
+      clip:rect(0 0 0 0);white-space:nowrap;border:0;
+    }
+    /* Asegurar que el chat está oculto inicialmente para ARIA */
+    #chatBox[aria-hidden="true"] { display: none; }
+  </style>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
