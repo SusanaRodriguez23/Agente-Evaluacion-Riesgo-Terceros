@@ -1,5 +1,5 @@
 # Caso 13: Agente de Evaluación de Riesgo de Terceros
-
+![Evaly, asistente evaluador](img/Evaly.png)
 **Proyecto IA - Evaluador de Riesgo de Proveedores y Terceros**  
 Evaly es un asistente diseñado para evaluar el riesgo de proveedores y terceros de manera rápida y confiable, integrando una base de conocimiento, reglas de riesgo y consultas a herramientas externas.
 ---
