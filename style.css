@@ -57,7 +57,7 @@ body::before {
   height: 200%;
   background: var(--accent-gradient);
   background-size: 200% 200%;
-  animation: moveGradient 18s infinite alternate ease;
+  animation: moveGradient 8s infinite alternate ease;
   z-index: -3;
   transition: opacity .3s ease;
 }
