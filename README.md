@@ -15,6 +15,34 @@ Evaly es un asistente diseñado para evaluar el riesgo de proveedores y terceros
 ```bash
 git clone https://github.com/SusanaRodriguez23/Agente-Evaluacion-Riesgo-Terceros.git
 ```
+2. Abrir Visual Studio Code:
+- Abre VS Code.
+- Selecciona Archivo → Abrir carpeta y busca la carpeta donde clonaste el proyecto (Agente-Evaluacion-Riesgo-Terceros).
+
+3. Instalar extensión "Live Server" (opcional pero recomendado):
+- En VS Code, ve a Extensiones (Ctrl+Shift+X) y busca Live Server.
+- Instálala y reinicia VS Code si es necesario.
+
+4. Abrir el proyecto en el navegador:
+- Haz clic derecho sobre index.html → Abrir con Live Server.
+- Esto abrirá tu proyecto en el navegador y podrás interactuar con Evaly.
+
+5. Editar y guardar cambios:
+- Cada vez que modifiques HTML, CSS o JS y guardes, Live Server actualizará automáticamente la página.
+
+---
+## ⚙️ Configuración de n8n
+1. Los workflows de n8n están disponibles en la carpeta "workflows" del repositorio.
+
+2. Configurar el webhook en Evaly:
+- Crea un archivo llamado config.js.
+- Asegúrate de que N8N_WEBHOOK_URL apunte a la URL del webhook online de tu n8n:
+``` js
+export const N8N_WEBHOOK_URL = "https://tu-n8n-online.com/webhook/...";
+```
+3. Guardar y probar el chat:
+- Haz clic en Evaly, escribe tu pregunta y verifica que reciba respuesta desde el webhook de n8n.
+  
 ❓ Preguntas de Prueba
 
 🔹 Tool (Certificaciones de proveedores)
