@@ -17,20 +17,20 @@ git clone https://github.com/SusanaRodriguez23/Agente-Evaluacion-Riesgo-Terceros
 ```
 ❓ Preguntas de Prueba
 🔹 Tool (Certificaciones de proveedores)
-¿El proveedor SecureCloud está certificado en ISO 27001 actualmente?
-¿TechNova tiene vigente su auditoría SOC 2 Type II?
-¿DataPlus cuenta con alguna certificación de seguridad actualmente?
-¿El proveedor FortifyCloud mantiene cumplimiento PCI-DSS?
-¿Cuál es el estado de certificación de GlobalData?
+- ¿El proveedor SecureCloud está certificado en ISO 27001 actualmente?
+- ¿TechNova tiene vigente su auditoría SOC 2 Type II?
+- ¿DataPlus cuenta con alguna certificación de seguridad actualmente?
+- ¿El proveedor FortifyCloud mantiene cumplimiento PCI-DSS?
+- ¿Cuál es el estado de certificación de GlobalData?
 
 🔹 RAG (Alto riesgo)
-¿Es considerado alto riesgo cuando un proveedor almacena datos PII fuera de la UE?
-¿Cuándo se considera riesgo alto en la transmisión de datos PII?
-¿Cuándo se clasifica como riesgo alto la pérdida de información personal en la nube?
-¿Qué situaciones implican riesgo alto al compartir datos PII con terceros no certificados?
+- ¿Es considerado alto riesgo cuando un proveedor almacena datos PII fuera de la UE?
+- ¿Cuándo se considera riesgo alto en la transmisión de datos PII?
+- ¿Cuándo se clasifica como riesgo alto la pérdida de información personal en la nube?
+- ¿Qué situaciones implican riesgo alto al compartir datos PII con terceros no certificados?
 
 🔹 Sin contexto
-¿Cómo puedo reducir el consumo de memoria RAM en Windows 11?
-¿Qué lenguajes se usan para crear videojuegos?
-¿Cuál es el mejor entrenamiento para aumentar masa muscular?
-¿Cuál es la temperatura máxima del Sol?
+- ¿Cómo puedo reducir el consumo de memoria RAM en Windows 11?
+- ¿Qué lenguajes se usan para crear videojuegos?
+- ¿Cuál es el mejor entrenamiento para aumentar masa muscular?
+- ¿Cuál es la temperatura máxima del Sol?
