@@ -16,14 +16,14 @@ Evaly es un asistente diseñado para evaluar el riesgo de proveedores y terceros
 git clone https://github.com/SusanaRodriguez23/Agente-Evaluacion-Riesgo-Terceros.git
 ```
 ❓ Preguntas de Prueba
-🔹 Tool (Certificaciones de proveedores)
+- 🔹 Tool (Certificaciones de proveedores)
 - ¿El proveedor SecureCloud está certificado en ISO 27001 actualmente?
 - ¿TechNova tiene vigente su auditoría SOC 2 Type II?
 - ¿DataPlus cuenta con alguna certificación de seguridad actualmente?
 - ¿El proveedor FortifyCloud mantiene cumplimiento PCI-DSS?
 - ¿Cuál es el estado de certificación de GlobalData?
 
-🔹 RAG (Alto riesgo)
+🔹 RAG 
 - ¿Es considerado alto riesgo cuando un proveedor almacena datos PII fuera de la UE?
 - ¿Cuándo se considera riesgo alto en la transmisión de datos PII?
 - ¿Cuándo se clasifica como riesgo alto la pérdida de información personal en la nube?
