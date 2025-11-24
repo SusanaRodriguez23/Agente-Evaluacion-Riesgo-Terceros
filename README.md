@@ -15,7 +15,7 @@ Evaly es un asistente diseñado para evaluar el riesgo de proveedores y terceros
 ```bash
 git clone https://github.com/SusanaRodriguez23/Agente-Evaluacion-Riesgo-Terceros.git
 ```
--❓ Preguntas de Prueba
+❓ Preguntas de Prueba
 
 🔹 Tool (Certificaciones de proveedores)
 - ¿El proveedor SecureCloud está certificado en ISO 27001 actualmente?
